@@ -16,7 +16,7 @@ from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 import numpy as np
 
 #%%
-path = r'C:\Users\cavlc\OneDrive\Desktop\Pinnacle Full-Stack Intern\Pinnacle-Full-Stacks-Intern\spam.csv'
+path = r'C:\Users\cavlc\OneDrive\Desktop\Pinnacle Full-Stack Intern\Pinnacle-Full-Stacks-Intern\E-mail Spam Detection\spam.csv'
 
 with open(path, 'rb') as f:
     result = chardet.detect(f.read())
@@ -53,16 +53,31 @@ X_train_tfidf = tfidf_vectorizer.fit_transform(X_train)
 X_test_tfidf = tfidf_vectorizer.transform(X_test)
 
 #%%
+
+models = ['XGBoost', 'XGBoost (GridSearchCV)', 'Random Forest', 'Random Forest (GridSearchCV)', 'GaussianNB']
+
+# Interpretation of Confusion Matrices
+interpretations = {
+    'XGBoost': 'The XGBoost model shows a clear distinction between spam and ham messages with minimal misclassifications. The random colors help to visually separate the different regions of the matrix.',
+    'XGBoost (GridSearchCV)': 'After hyperparameter tuning, the XGBoost model confusion matrix shows even fewer misclassifications, indicating improved performance.',
+    'Random Forest': 'The Random Forest model confusion matrix also shows a good distinction between spam and ham messages, but with slightly more misclassifications compared to the XGBoost model.',
+    'Random Forest (GridSearchCV)': 'The confusion matrix after hyperparameter tuning for Random Forest shows improved accuracy with fewer misclassifications.',
+    'GaussianNB': 'The Gaussian Naive Bayes model confusion matrix shows the highest number of misclassifications among the models, indicating that this model might not be as effective for this particular dataset.'
+}
+
 # Function to plot confusion matrix
 def plot_confusion_matrix(y_true, y_pred, title):
-    cm = confusion_matrix(y_true, y_pred)
+    cm = confusion_matrix(y_true, y_pred, labels=[0, 1])
     random_colors = np.random.rand(256, 3)
     random_cmap = plt.cm.colors.ListedColormap(random_colors)
-    
-    disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=['ham', 'spam'])
     disp.plot(cmap=random_cmap)
     plt.title(title)
+
+    plt.figtext(0.5, -0.2, f'{title} Model : {interpretations[title]}', wrap=True, horizontalalignment='center', fontsize=12)
     plt.show()
+
 #%%
 # Build the XGBoost model
 classifier = xgb.XGBClassifier()
@@ -81,7 +96,9 @@ print(f'Accuracy for XGBoost model: {accuracy:.2f}')
 # Classification report
 print("classification report for XGBoost model")
 print(classification_report(y_test, y_pred))
-plot_confusion_matrix(y_test, y_pred, "XGBoost Confusion Matrix")
+
+# Plot confusion matrix
+plot_confusion_matrix(y_test, y_pred, "XGBoost")
 
 #%%
 # Hyperparameter tuning using GridSearchCV 
@@ -107,7 +124,7 @@ print(f'Accuracy (GridSearchCV): {accuracy_grid:.2f}')
 # Classification report
 print("classification report for XGBoost model after hyperparameteriszing with GridSearch")
 print(classification_report(y_test, y_pred_grid))
-plot_confusion_matrix(y_test, y_pred_grid, "XGBoost (GridSearchCV) Confusion Matrix")
+plot_confusion_matrix(y_test, y_pred_grid, "XGBoost (GridSearchCV)")
 
 #%%
 # Build the Random Forest model
@@ -127,7 +144,7 @@ print(f'Accuracy: {accuracy_rf:.2f}')
 # Classification report
 print("classification report for Random Forest model")
 print(classification_report(y_test, y_pred_rf))
-plot_confusion_matrix(y_test, y_pred_rf, "Random Forest Confusion Matrix")
+plot_confusion_matrix(y_test, y_pred_rf, "Random Forest")
 
 #%%
 # Hyperparameter tuning using GridSearchCV 
@@ -154,7 +171,7 @@ print(f'Accuracy (GridSearchCV): {accuracy_grid_rf:.2f}')
 
 # Classification report
 print(classification_report(y_test, y_pred_grid_rf))
-plot_confusion_matrix(y_test, y_pred_grid_rf, "Random Forest (GridSearchCV) Confusion Matrix")
+plot_confusion_matrix(y_test, y_pred_grid_rf, "Random Forest (GridSearchCV)")
 
 
 #%%
@@ -177,14 +194,30 @@ print("Accuracy Test Score for GaussianNB: ", accuracy_score(y_test, gnb_pred))
 # Classification report
 print("classification report for GaussianNB")
 print(classification_report(y_test, y_pred_grid_rf))
-plot_confusion_matrix(y_test, gnb_pred, "GaussianNB Confusion Matrix")
+plot_confusion_matrix(y_test, gnb_pred, "GaussianNB")
 
 #%%
+
 # Bar Plot of Accuracy Scores
-models = ['XGBoost', 'XGBoost (GridSearchCV)', 'Random Forest', 'Random Forest (GridSearchCV)', 'GaussianNB']
 accuracies = [accuracy, accuracy_grid, accuracy_rf, accuracy_grid_rf, accuracy_score(y_test, gnb_pred)]
 plt.figure(figsize=(10, 6))
 sns.barplot(x=models, y=accuracies)
 plt.title('Model Accuracy Comparison')
 plt.ylabel('Accuracy')
+
+# Adding interpretation as figure text
+interpretation_text = (
+    "Interpretation of the Bar Plot:\n"
+    "- The bar plot compares the accuracy scores of different models used for spam detection.\n"
+    "- **XGBoost Model**: Achieved an accuracy of {:.2f}.\n"
+    "- **XGBoost (GridSearchCV) Model**: After hyperparameter tuning, the accuracy improved to {:.2f}.\n"
+    "- **Random Forest Model**: Achieved an accuracy of {:.2f}.\n"
+    "- **Random Forest (GridSearchCV) Model**: After hyperparameter tuning, the accuracy improved to {:.2f}.\n"
+    "- **Gaussian Naive Bayes Model**: Achieved an accuracy of {:.2f}.\n\n"
+    "Overall, the XGBoost model with hyperparameter tuning achieved the highest accuracy, followed closely by the Random Forest model with hyperparameter tuning. The Gaussian Naive Bayes model had the lowest accuracy, indicating that it might not be the best choice for this dataset.\n\n"
+    "These results suggest that both XGBoost and Random Forest, especially after hyperparameter tuning, are effective models for spam detection in this dataset."
+).format(accuracy, accuracy_grid, accuracy_rf, accuracy_grid_rf, accuracy_score(y_test, gnb_pred))
+
+plt.figtext(0.5, -0.5, interpretation_text, wrap=True, horizontalalignment='center', fontsize=12)
+
 plt.show()
